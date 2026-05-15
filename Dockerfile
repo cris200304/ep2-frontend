@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
@@ -8,6 +8,20 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 5173
+RUN npm run build
 
-CMD ["npm", "run", "dev", "--", "--host"]
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+RUN npm install -g serve
+
+COPY --from=build /app/dist ./dist
+
+USER appuser
+
+EXPOSE 4173
+
+CMD ["serve", "-s", "dist", "-l", "4173"]
